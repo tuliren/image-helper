@@ -1,11 +1,29 @@
 # Image Helper
 
-A Chrome (Manifest V3) extension with:
+A Chrome (Manifest V3) extension that adds a floating toolbar to every large image on the page
+with two actions:
 
-- A **side panel** with three tabs: Main (page → markdown), Profile, About.
-- An **options page** backed by `chrome.storage.sync`.
-- A **content script** ↔ **side panel** messaging example (HTML → Markdown via Turndown).
-- A **background** service worker that opens the side panel on a keyboard shortcut.
+- **Open image in new tab**
+- **Save image** (to a configurable subfolder under your default Downloads directory; duplicate
+  names are disambiguated with ` (N)` suffixes automatically)
+
+## Features
+
+- Activate / deactivate by clicking the extension's toolbar icon. The icon switches between
+  outline (inactive) and filled (active) so the current state is obvious. Deactivated by default.
+- Toolbar appears on hover over images whose `Content-Length` meets the configurable **KB
+  threshold**.
+- Optional **middle-click shortcut** that runs Open or Save without showing the toolbar.
+- Once an image has been saved during the current page session, the Save button swaps to a
+  "Saved" variant. Memory is cleared on page refresh.
+
+## Permissions
+
+Kept minimal:
+
+- `storage` — persist options and the global active flag.
+- `downloads` — save images to a relative subfolder with `conflictAction: 'uniquify'`.
+- `host_permissions: <all_urls>` — HEAD-check image sizes from the background service worker.
 
 ## Develop
 
@@ -26,27 +44,24 @@ yarn build-prod     # → dist (uses .env.production + public/prod/manifest.json
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
 3. Click **Load unpacked** and choose `dist`.
-4. Pin the toolbar icon and click it to open the side panel. The default keyboard shortcut is `Ctrl+Shift+O` (Mac: `MacCtrl+Shift+O`).
+4. Pin the Image Helper icon. Click it once to activate on the current and future pages.
+5. Open the options page (right-click the icon → Options) to set threshold, subfolder, and
+   middle-click behavior.
 
 ## Layout
 
 ```
 src/
-  background.ts             Service worker, registers keyboard command.
-  content_script.tsx        Listens for messages, converts DOM → markdown.
-  side_panel.tsx            Side-panel entry (React root).
-  options.tsx               Options page entry.
+  background.ts             Service worker: toggle state, HEAD + download handlers.
+  content_script.ts         Observes images, renders the shadow-DOM toolbar, handles middle-click.
+  options.tsx               Options page React root.
   common/
-    messages.ts             Request/response types shared across surfaces.
-    chrome.ts               sendMessageToTab helper.
-    markdown.ts             Turndown service + rules.
-    globalConfig.ts         Env-derived config (environment, version).
-  contexts/
-    TabsContext.tsx         Tracks the active tab.
-    UserProfileContext.tsx  Local-only placeholder profile (chrome.storage.local).
-    OptionsContext.tsx      Single placeholder option (chrome.storage.sync).
-  hooks/
-    useHtmlParser.ts        Side-panel → content-script round-trip.
-  side_panel/SidePanel.tsx  Main / Profile / About tabs.
-  options/Options.tsx       Options form.
+    filename.ts             Derive a safe download filename from URL + content type.
+    logging.ts              Dev-only console wrapper.
+    messages.ts             Request/response types shared with the service worker.
+    options.ts              Options model + chrome.storage wrappers (no React deps).
+    sizeCache.ts            Per-URL HEAD response cache with request deduplication.
+  contexts/OptionsContext.tsx   Options page React context.
+  options/Options.tsx       Options form (Tailwind).
+  styles/tailwind.css       Tailwind v4 entry, imported by the options page and content script.
 ```

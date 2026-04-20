@@ -1,23 +1,29 @@
 export enum MessageType {
-  ConvertHtmlToMarkdown = 'convert_html_to_markdown',
+  HeadImage = 'head_image',
+  DownloadImage = 'download_image',
 }
 
-export interface BaseRequestMessage {
-  id: string;
-  type: MessageType;
+export interface HeadImageRequest {
+  type: MessageType.HeadImage;
+  url: string;
 }
 
-export interface BaseResponseMessage {
-  id: string;
-  type: MessageType;
+export interface HeadImageResponse {
+  ok: boolean;
+  bytes?: number;
+  error?: string;
 }
 
-export interface ConvertHtmlToMarkdownRequest extends BaseRequestMessage {
-  type: MessageType.ConvertHtmlToMarkdown;
+export interface DownloadImageRequest {
+  type: MessageType.DownloadImage;
+  url: string;
+  referrer?: string;
 }
 
-export interface ConvertHtmlToMarkdownResponse extends BaseResponseMessage {
-  markdown: string;
+export interface DownloadImageResponse {
+  ok: boolean;
+  filename?: string;
+  error?: string;
 }
 
-export type RequestMessage = ConvertHtmlToMarkdownRequest;
+export type RequestMessage = HeadImageRequest | DownloadImageRequest;
