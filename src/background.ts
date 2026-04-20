@@ -26,9 +26,10 @@ const ICONS_INACTIVE = {
   '128': 'icons/icon-128.png',
 };
 
-const BADGE_ACTIVE_TEXT = 'ON';
+const BADGE_ACTIVE_TEXT = 'On';
 const BADGE_ACTIVE_COLOR = '#0284c7';
-const BADGE_INACTIVE_TEXT = '';
+const BADGE_INACTIVE_TEXT = 'Off';
+const BADGE_INACTIVE_COLOR = '#94a3b8';
 
 const log = (...data: unknown[]) => {
   console.log('[image-helper]', ...data);
@@ -49,7 +50,9 @@ const applyVisualState = async (active: boolean): Promise<void> => {
     console.warn('[image-helper] setTitle failed', error);
   }
   try {
-    await chrome.action.setBadgeBackgroundColor({ color: BADGE_ACTIVE_COLOR });
+    await chrome.action.setBadgeBackgroundColor({
+      color: active ? BADGE_ACTIVE_COLOR : BADGE_INACTIVE_COLOR,
+    });
     await chrome.action.setBadgeText({ text: active ? BADGE_ACTIVE_TEXT : BADGE_INACTIVE_TEXT });
   } catch (error) {
     console.warn('[image-helper] setBadge failed', error);
