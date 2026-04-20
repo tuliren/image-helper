@@ -1,5 +1,10 @@
 import { deriveFilename } from './common/filename';
-import { devLog } from './common/logging';
+import {
+  ACTIVE_STATE_STORAGE_KEY,
+  readActiveState,
+  readOptions,
+  writeActiveState,
+} from './common/options';
 import {
   DownloadImageRequest,
   DownloadImageResponse,
@@ -8,7 +13,6 @@ import {
   MessageType,
   RequestMessage,
 } from './common/messages';
-import { readActiveState, readOptions, writeActiveState } from './common/options';
 
 const ICONS_ACTIVE = {
   '16': 'icons/icon-16-active.png',
@@ -22,19 +26,42 @@ const ICONS_INACTIVE = {
   '128': 'icons/icon-128.png',
 };
 
-const applyIcon = async (active: boolean): Promise<void> => {
+const BADGE_ACTIVE_TEXT = 'ON';
+const BADGE_ACTIVE_COLOR = '#0284c7';
+const BADGE_INACTIVE_TEXT = '';
+
+const log = (...data: unknown[]) => {
+  console.log('[image-helper]', ...data);
+};
+
+const applyVisualState = async (active: boolean): Promise<void> => {
+  log('applyVisualState', { active });
   try {
     await chrome.action.setIcon({ path: active ? ICONS_ACTIVE : ICONS_INACTIVE });
   } catch (error) {
-    devLog('warn', 'Failed to set action icon', error);
+    console.warn('[image-helper] setIcon failed', error);
   }
   try {
     await chrome.action.setTitle({
       title: active ? 'Image Helper (active — click to disable)' : 'Image Helper (click to enable)',
     });
   } catch (error) {
-    devLog('warn', 'Failed to set action title', error);
+    console.warn('[image-helper] setTitle failed', error);
   }
+  try {
+    await chrome.action.setBadgeBackgroundColor({ color: BADGE_ACTIVE_COLOR });
+    await chrome.action.setBadgeText({ text: active ? BADGE_ACTIVE_TEXT : BADGE_INACTIVE_TEXT });
+  } catch (error) {
+    console.warn('[image-helper] setBadge failed', error);
+  }
+};
+
+const toggleActive = async (): Promise<void> => {
+  const current = await readActiveState();
+  const next = !current;
+  log('toggleActive', { current, next });
+  await writeActiveState(next);
+  await applyVisualState(next);
 };
 
 const handleHeadImage = async (request: HeadImageRequest): Promise<HeadImageResponse> => {
@@ -87,21 +114,29 @@ const handleDownloadImage = async (
   }
 };
 
-chrome.runtime.onInstalled.addListener(async () => {
-  const active = await readActiveState();
-  await applyIcon(active);
+chrome.runtime.onInstalled.addListener(async (details) => {
+  log('onInstalled', details);
+  await applyVisualState(await readActiveState());
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  const active = await readActiveState();
-  await applyIcon(active);
+  log('onStartup');
+  await applyVisualState(await readActiveState());
 });
 
-chrome.action.onClicked.addListener(async () => {
-  const current = await readActiveState();
-  const next = !current;
-  await writeActiveState(next);
-  await applyIcon(next);
+chrome.action.onClicked.addListener((tab) => {
+  log('action.onClicked', { tabId: tab.id });
+  toggleActive().catch((error) => console.error('[image-helper] toggle failed', error));
+});
+
+chrome.storage.onChanged.addListener((changes, areaName) => {
+  if (areaName === 'local' && changes[ACTIVE_STATE_STORAGE_KEY] != null) {
+    const nextValue = Boolean(changes[ACTIVE_STATE_STORAGE_KEY].newValue);
+    log('storage.onChanged ACTIVE_STATE', { nextValue });
+    applyVisualState(nextValue).catch((error) =>
+      console.error('[image-helper] applyVisualState failed', error)
+    );
+  }
 });
 
 chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
@@ -119,3 +154,8 @@ chrome.runtime.onMessage.addListener((rawMessage, _sender, sendResponse) => {
   }
   return false;
 });
+
+void (async () => {
+  log('service worker boot');
+  await applyVisualState(await readActiveState());
+})();
