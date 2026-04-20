@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "compilerOptions": {
+    "lib": ["esnext", "es2017.object", "dom", "webworker"],
+    "target": "es6",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "outDir": "dist/js",
+    "allowJs": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "noEmitOnError": true,
+    "preserveWatchOutput": true,
+    "skipLibCheck": true,
+    "sourceMap": false,
+    "strict": true,
+    "typeRoots": ["./node_modules/@types"]
+  },
+  "include": ["src", "typings.d.ts", "webpack/**.js"],
+  "exclude": ["node_modules", "dist"]
+}
