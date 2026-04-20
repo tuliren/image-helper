@@ -1,5 +1,4 @@
 // eslint-disable-next-line import-x/no-unresolved
-import tailwindCss from './styles/tailwind.css?raw';
 import { devLog } from './common/logging';
 import {
   DownloadImageRequest,
@@ -17,6 +16,7 @@ import {
   readOptions,
 } from './common/options';
 import { SizeCache } from './common/sizeCache';
+import tailwindCss from './styles/tailwind.css?raw';
 
 interface State {
   active: boolean;
@@ -108,8 +108,7 @@ const createToolbar = (): ToolbarHandle => {
   const buttonOpen = document.createElement('button');
   buttonOpen.type = 'button';
   buttonOpen.className = buttonBase;
-  buttonOpen.innerHTML =
-    '<span aria-hidden="true">↗</span><span>Open</span>';
+  buttonOpen.innerHTML = '<span aria-hidden="true">↗</span><span>Open</span>';
   buttonOpen.title = 'Open image in new tab';
 
   const buttonSave = document.createElement('button');
@@ -289,10 +288,12 @@ const measureImage = async (image: HTMLImageElement): Promise<void> => {
     return;
   }
   const cached = sizeCache.get(url);
-  const result = cached ?? (await sizeCache.fetch(url, async (u) => {
-    const response = await headImage(u);
-    return { bytes: response?.ok ? response.bytes ?? null : null };
-  }));
+  const result =
+    cached ??
+    (await sizeCache.fetch(url, async (u) => {
+      const response = await headImage(u);
+      return { bytes: response?.ok ? (response.bytes ?? null) : null };
+    }));
   if (isQualifyingSize(result.bytes)) {
     qualifyingImages.add(image);
   }

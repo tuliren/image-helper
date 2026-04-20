@@ -1,10 +1,6 @@
 import { ChangeEvent, FC, useEffect, useState } from 'react';
 
-import {
-  DEFAULT_DOWNLOAD_SUBDIR,
-  MiddleClickAction,
-  sanitizeSubdir,
-} from '../common/options';
+import { DEFAULT_DOWNLOAD_SUBDIR, MiddleClickAction, sanitizeSubdir } from '../common/options';
 import { useOptions } from '../contexts/OptionsContext';
 
 const MIDDLE_CLICK_LABELS: Record<MiddleClickAction, string> = {
@@ -104,9 +100,7 @@ const Options: FC = () => {
         <span>Middle-click shortcut</span>
         <select
           value={middleClickAction}
-          onChange={(event) =>
-            setMiddleClickAction(event.currentTarget.value as MiddleClickAction)
-          }
+          onChange={(event) => setMiddleClickAction(event.currentTarget.value as MiddleClickAction)}
           className={inputClass}
         >
           {(Object.keys(MIDDLE_CLICK_LABELS) as MiddleClickAction[]).map((action) => (
@@ -129,9 +123,7 @@ const Options: FC = () => {
         >
           {savingOptions ? 'Saving…' : 'Save'}
         </button>
-        {savedBanner && (
-          <span className="text-sm text-emerald-600">Saved.</span>
-        )}
+        {savedBanner && <span className="text-sm text-emerald-600">Saved.</span>}
       </div>
     </div>
   );

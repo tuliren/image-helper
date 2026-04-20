@@ -1,11 +1,5 @@
 import { deriveFilename } from './common/filename';
 import {
-  ACTIVE_STATE_STORAGE_KEY,
-  readActiveState,
-  readOptions,
-  writeActiveState,
-} from './common/options';
-import {
   DownloadImageRequest,
   DownloadImageResponse,
   HeadImageRequest,
@@ -13,6 +7,12 @@ import {
   MessageType,
   RequestMessage,
 } from './common/messages';
+import {
+  ACTIVE_STATE_STORAGE_KEY,
+  readActiveState,
+  readOptions,
+  writeActiveState,
+} from './common/options';
 
 const ICONS_ACTIVE = {
   '16': 'icons/icon-16-active.png',
