@@ -92,7 +92,8 @@ const Options: FC = () => {
         />
         <span className="text-xs font-normal text-slate-500">
           Relative to your default Downloads folder. Duplicate names get <code>(N)</code> suffixes
-          automatically.
+          automatically — e.g. <code>cat.png</code> → <code>cat (1).png</code> →{' '}
+          <code>cat (2).png</code>.
         </span>
       </label>
 
