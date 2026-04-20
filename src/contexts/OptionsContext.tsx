@@ -1,14 +1,12 @@
 import { FC, ReactNode, createContext, useCallback, useContext, useEffect, useState } from 'react';
 
-export interface ExtensionOptions {
-  enableNotifications: boolean;
-}
-
-export const DEFAULT_OPTIONS: ExtensionOptions = {
-  enableNotifications: true,
-};
-
-export const OPTIONS_STORAGE_KEY = 'extension_options';
+import {
+  DEFAULT_OPTIONS,
+  ExtensionOptions,
+  OPTIONS_STORAGE_KEY,
+  readOptions,
+  writeOptions,
+} from '../common/options';
 
 interface OptionsContextType {
   options: ExtensionOptions;
@@ -26,22 +24,6 @@ const OptionsContext = createContext<OptionsContextType>({
 
 export const useOptions = () => useContext(OptionsContext);
 
-const readOptions = async (): Promise<ExtensionOptions> => {
-  if (chrome.storage == null) {
-    return DEFAULT_OPTIONS;
-  }
-  const result = await chrome.storage.sync.get(OPTIONS_STORAGE_KEY);
-  const stored = result[OPTIONS_STORAGE_KEY] as ExtensionOptions | undefined;
-  return { ...DEFAULT_OPTIONS, ...(stored ?? {}) };
-};
-
-const writeOptions = async (options: ExtensionOptions): Promise<void> => {
-  if (chrome.storage == null) {
-    return;
-  }
-  await chrome.storage.sync.set({ [OPTIONS_STORAGE_KEY]: options });
-};
-
 export const OptionsProvider: FC<{ children: ReactNode }> = ({ children }) => {
   const [options, setOptions] = useState<ExtensionOptions>(DEFAULT_OPTIONS);
   const [loadingOptions, setLoadingOptions] = useState(true);
@@ -52,6 +34,22 @@ export const OptionsProvider: FC<{ children: ReactNode }> = ({ children }) => {
       setOptions(await readOptions());
       setLoadingOptions(false);
     })();
+
+    if (chrome?.storage?.onChanged == null) {
+      return;
+    }
+    const listener = (
+      changes: { [key: string]: chrome.storage.StorageChange },
+      areaName: chrome.storage.AreaName
+    ) => {
+      if (areaName !== 'sync' || changes[OPTIONS_STORAGE_KEY] == null) {
+        return;
+      }
+      const next = changes[OPTIONS_STORAGE_KEY].newValue as Partial<ExtensionOptions> | undefined;
+      setOptions({ ...DEFAULT_OPTIONS, ...(next ?? {}) });
+    };
+    chrome.storage.onChanged.addListener(listener);
+    return () => chrome.storage.onChanged.removeListener(listener);
   }, []);
 
   const updateOptions = useCallback(
