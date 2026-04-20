@@ -1,0 +1,144 @@
+name: Bump Chrome Version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_bump:
+        description: 'Version bump type'
+        required: true
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+        default: 'patch'
+
+env:
+  HUSKY: 0
+  CI: 1
+
+jobs:
+  bump-version:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Setup node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Get current version
+        id: current_version
+        run: |
+          current_version=$(grep '^VERSION=' .env.production | cut -d '=' -f2)
+          echo "current_version=${current_version}" >> "$GITHUB_OUTPUT"
+          echo "Current version: ${current_version}"
+
+      - name: Calculate new version
+        id: new_version
+        run: |
+          current="${{ steps.current_version.outputs.current_version }}"
+          bump="${{ inputs.version_bump }}"
+
+          IFS='.' read -r major minor patch <<< "$current"
+
+          case "$bump" in
+            major)
+              new_version="$((major + 1)).0.0"
+              ;;
+            minor)
+              new_version="${major}.$((minor + 1)).0"
+              ;;
+            patch)
+              new_version="${major}.${minor}.$((patch + 1))"
+              ;;
+          esac
+
+          echo "new_version=${new_version}" >> "$GITHUB_OUTPUT"
+          echo "new_version_dev=${new_version}-dev" >> "$GITHUB_OUTPUT"
+          echo "New version: ${new_version}"
+
+      - name: Update version in files
+        run: |
+          new_version="${{ steps.new_version.outputs.new_version }}"
+          new_version_dev="${{ steps.new_version.outputs.new_version_dev }}"
+
+          sed -i "s/^VERSION=.*/VERSION=${new_version_dev}/" .env.development
+          sed -i "s/\"version_name\": \".*\"/\"version_name\": \"${new_version_dev}\"/" public/dev/manifest.json
+
+          sed -i "s/^VERSION=.*/VERSION=${new_version}/" .env.production
+          sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" package.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" public/dev/manifest.json
+          sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" public/prod/manifest.json
+
+          echo "Updated all version files to ${new_version}"
+
+      - name: Verify changes
+        run: |
+          echo "=== .env.development ==="
+          grep "VERSION=" .env.development
+          echo ""
+          echo "=== .env.production ==="
+          grep "VERSION=" .env.production
+          echo ""
+          echo "=== package.json ==="
+          grep "\"version\":" package.json
+          echo ""
+          echo "=== public/dev/manifest.json ==="
+          grep -E "\"version(_name)?\":" public/dev/manifest.json
+          echo ""
+          echo "=== public/prod/manifest.json ==="
+          grep "\"version\":" public/prod/manifest.json
+
+      - name: Create branch and commit changes
+        id: create_branch
+        run: |
+          timestamp=$(date +%s)
+          branch_name="bump-chrome-version-${{ steps.new_version.outputs.new_version }}-${timestamp}"
+          echo "branch_name=${branch_name}" >> "$GITHUB_OUTPUT"
+
+          git checkout -b "${branch_name}"
+          git add .env.development .env.production package.json public/dev/manifest.json public/prod/manifest.json
+          git commit -m "Bump Chrome extension version to ${{ steps.new_version.outputs.new_version }}"
+          git push origin "${branch_name}"
+
+      - name: Create Pull Request
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh pr create \
+            --base main \
+            --head "${{ steps.create_branch.outputs.branch_name }}" \
+            --title "Bump Chrome extension version to ${{ steps.new_version.outputs.new_version }}" \
+            --body "## Version Bump
+
+          This PR bumps the Chrome extension version from **${{ steps.current_version.outputs.current_version }}** to **${{ steps.new_version.outputs.new_version }}**.
+
+          **Bump Type:** ${{ inputs.version_bump }}
+
+          ### Files Updated
+
+          - \`.env.development\` - VERSION=${{ steps.new_version.outputs.new_version_dev }}
+          - \`.env.production\` - VERSION=${{ steps.new_version.outputs.new_version }}
+          - \`package.json\` - version: ${{ steps.new_version.outputs.new_version }}
+          - \`public/dev/manifest.json\` - version: ${{ steps.new_version.outputs.new_version }}, version_name: ${{ steps.new_version.outputs.new_version_dev }}
+          - \`public/prod/manifest.json\` - version: ${{ steps.new_version.outputs.new_version }}
+
+          ---
+          *This PR was automatically generated by the Bump Chrome Version workflow.*"
