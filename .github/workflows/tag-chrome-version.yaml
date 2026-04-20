@@ -1,0 +1,43 @@
+name: Tag Chrome Version
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  HUSKY: 0
+  CI: 1
+
+jobs:
+  tag-version:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Extract version and create tag
+        run: |
+          version=$(grep -m 1 '"version"' package.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+          tag_name="image-helper@${version}"
+
+          echo "Extracted version: ${version}"
+          echo "Tag name: ${tag_name}"
+
+          if git rev-parse "${tag_name}" >/dev/null 2>&1; then
+            echo "Tag ${tag_name} already exists. Skipping tag creation."
+            exit 0
+          fi
+
+          echo "Creating tag ${tag_name}"
+          git tag -a "${tag_name}" -m "Release image-helper version ${version}"
+          git push origin "${tag_name}"
+          echo "Successfully created and pushed tag ${tag_name}"

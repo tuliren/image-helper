@@ -1,0 +1,44 @@
+name: Build Chrome
+
+on:
+  workflow_dispatch:
+
+env:
+  HUSKY: 0
+  CI: 1
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  build-prod:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Setup node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: yarn
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      - name: Build prod package
+        run: yarn build-prod
+      - name: Get prod package suffix
+        run: |
+          version=$(grep '"version"' dist/manifest.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+          short_sha=${GITHUB_SHA:0:7}
+          suffix="${version}-prod-${short_sha}"
+          echo "Set package_suffix to ${suffix}"
+          echo "package_suffix=${suffix}" >> "$GITHUB_ENV"
+      - name: Upload prod package
+        uses: actions/upload-artifact@v4
+        with:
+          name: image-helper@${{ env.package_suffix }}
+          path: ./dist/
+          overwrite: true
+          retention-days: 30
+          if-no-files-found: error
