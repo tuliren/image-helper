@@ -2,7 +2,7 @@
 
 ## Dev Preferences
 
-- After each change, run `yarn lint` and `yarn typecheck` to ensure no errors.
+- After each change, run `yarn lint`, `yarn typecheck`, and `yarn test` to ensure no errors.
 - DRY the code when appropriate.
 - Always use curly braces after `if` statements.
 - Always think about adding unit tests for new features and bug fixes. Aim for good coverage on critical parsing logic and workflows. But skip unit tests if it involves complicated mocking or stubs.
