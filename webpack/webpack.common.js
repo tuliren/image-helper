@@ -1,4 +1,3 @@
-const webpack = require('webpack');
 const path = require('path');
 const srcDir = path.join(__dirname, '..', 'src');
 
@@ -6,8 +5,7 @@ module.exports = {
   entry: {
     options: path.join(srcDir, 'options.tsx'),
     background: path.join(srcDir, 'background.ts'),
-    content_script: path.join(srcDir, 'content_script.tsx'),
-    side_panel: path.join(srcDir, 'side_panel.tsx'),
+    content_script: path.join(srcDir, 'content_script.ts'),
   },
   output: {
     path: path.join(__dirname, '../dist/js'),
@@ -17,7 +15,7 @@ module.exports = {
     splitChunks: {
       name: 'vendor',
       chunks(chunk) {
-        return chunk.name !== 'background';
+        return chunk.name === 'options';
       },
     },
   },
@@ -30,6 +28,13 @@ module.exports = {
       },
       {
         test: /\.css$/i,
+        resourceQuery: /raw/,
+        type: 'asset/source',
+        use: ['postcss-loader'],
+      },
+      {
+        test: /\.css$/i,
+        resourceQuery: { not: [/raw/] },
         use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
     ],

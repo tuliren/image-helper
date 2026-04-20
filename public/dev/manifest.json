@@ -1,41 +1,34 @@
 {
   "manifest_version": 3,
-  "name": "Chrome Extension Template (dev)",
-  "description": "Chrome extension template with side panel, options, and content-script messaging",
-  "homepage_url": "https://github.com/tuliren/turbo-template",
+  "name": "Image Helper (dev)",
+  "description": "Adds a floating toolbar to large images with open-in-new-tab and save-to-folder actions.",
+  "homepage_url": "https://github.com/tuliren/image-helper",
   "version": "0.0.1",
   "version_name": "0.0.1-dev",
   "action": {
-    "default_icon": "favicon.png",
-    "default_title": "Open Chrome Extension Template"
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "Image Helper (click to toggle)"
   },
   "icons": {
-    "16": "favicon.png",
-    "48": "favicon.png",
-    "128": "favicon.png"
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["js/vendor.js", "js/content_script.js"]
+      "js": ["js/content_script.js"],
+      "run_at": "document_idle"
     }
   ],
-  "side_panel": {
-    "default_path": "side_panel.html"
-  },
   "options_page": "options.html",
   "background": {
     "service_worker": "js/background.js"
   },
-  "commands": {
-    "open_side_panel": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+O",
-        "mac": "MacCtrl+Shift+O"
-      },
-      "description": "Open the side panel",
-      "global": false
-    }
-  },
-  "permissions": ["sidePanel", "storage", "tabs"]
+  "permissions": ["storage", "downloads"],
+  "host_permissions": ["<all_urls>"]
 }
