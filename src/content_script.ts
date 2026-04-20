@@ -1,4 +1,3 @@
-// eslint-disable-next-line import-x/no-unresolved
 import { devLog } from './common/logging';
 import {
   DownloadImageRequest,
@@ -16,6 +15,7 @@ import {
   readOptions,
 } from './common/options';
 import { SizeCache } from './common/sizeCache';
+// eslint-disable-next-line import-x/no-unresolved
 import tailwindCss from './styles/tailwind.css?raw';
 
 interface State {
@@ -99,7 +99,7 @@ const createToolbar = (): ToolbarHandle => {
 
   const container = document.createElement('div');
   container.className =
-    'pointer-events-auto inline-flex items-center gap-1 rounded-md bg-slate-900/90 p-1 text-xs text-white shadow-lg backdrop-blur fixed';
+    'pointer-events-auto inline-flex items-center gap-1 rounded-md bg-slate-900/90 p-1 font-sans text-xs text-white shadow-lg backdrop-blur fixed';
   container.style.position = 'fixed';
 
   const buttonBase =
