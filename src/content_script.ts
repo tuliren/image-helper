@@ -30,7 +30,7 @@ const state: State = {
 
 const sizeCache = new SizeCache();
 const qualifyingImages = new WeakSet<HTMLImageElement>();
-const trackedImages = new WeakSet<HTMLImageElement>();
+const trackedImages = new Set<HTMLImageElement>();
 const downloadedUrls = new Set<string>();
 
 let intersectionObserver: IntersectionObserver | null = null;
@@ -408,6 +408,7 @@ const start = () => {
   setupIntersectionObserver();
   setupMutationObserver();
   scanAllImages();
+  trackedImages.forEach((image) => intersectionObserver?.observe(image));
   document.addEventListener('mousedown', handleMiddleClick, true);
   document.addEventListener('auxclick', handleMiddleClick, true);
 };
