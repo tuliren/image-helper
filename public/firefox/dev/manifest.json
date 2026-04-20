@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "Image Helper (dev)",
+  "description": "Adds a floating toolbar to large images with open-in-new-tab and save-to-folder actions.",
+  "homepage_url": "https://github.com/tuliren/image-helper",
+  "version": "0.0.1",
+  "version_name": "0.0.1-dev",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "image-helper-dev@tuliren.github.io",
+      "strict_min_version": "121.0"
+    }
+  },
+  "action": {
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    },
+    "default_title": "Image Helper (click to toggle)"
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["js/content_script.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "scripts": ["js/background.js"]
+  },
+  "permissions": ["storage", "downloads"],
+  "host_permissions": ["<all_urls>"]
+}

@@ -1,5 +1,11 @@
 const path = require('path');
+
 const srcDir = path.join(__dirname, '..', 'src');
+const browser = process.env.BROWSER || 'chrome';
+
+if (browser !== 'chrome' && browser !== 'firefox') {
+  throw new Error(`Unsupported BROWSER "${browser}"; expected "chrome" or "firefox"`);
+}
 
 module.exports = {
   entry: {
@@ -8,7 +14,7 @@ module.exports = {
     content_script: path.join(srcDir, 'content_script.ts'),
   },
   output: {
-    path: path.join(__dirname, '../dist/js'),
+    path: path.join(__dirname, '..', 'dist', browser, 'js'),
     filename: '[name].js',
   },
   optimization: {
