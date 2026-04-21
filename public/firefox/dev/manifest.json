@@ -3,8 +3,8 @@
   "name": "Image Helper (dev)",
   "description": "Adds a floating toolbar to large images with open-in-new-tab and save-to-folder actions.",
   "homepage_url": "https://github.com/tuliren/image-helper",
-  "version": "0.0.1",
-  "version_name": "0.0.1-dev",
+  "version": "1.0.0",
+  "version_name": "1.0.0-dev",
   "browser_specific_settings": {
     "gecko": {
       "id": "image-helper-dev@tuliren.github.io",
