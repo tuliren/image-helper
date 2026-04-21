@@ -15,11 +15,18 @@
 
 ## Project Architecture
 
-- Chrome MV3 extension. Three entry points:
-  - `src/background.ts` — service worker. Handles action-click toggle, HEAD fetches, and `chrome.downloads.download` requests.
+- MV3 browser extension, built for both Chrome and Firefox. Three entry points:
+  - `src/background.ts` — background script. On Chrome it runs as a service worker (`background.service_worker`); on Firefox it runs as an event page (`background.scripts`). Handles action-click toggle, HEAD fetches, and `chrome.downloads.download` requests. Keep it free of service-worker-only APIs (e.g. `self.caches`, `DedicatedWorker`-specific globals) so it runs in both modes.
   - `src/content_script.ts` — **plain TS, no React**. Observes `<img>`, renders a shadow-DOM floating toolbar. Keep it React-free to keep the injected bundle small.
   - `src/options.tsx` — React + Tailwind options page. Styled with plain HTML controls, no component library.
 - Tailwind v4 via `@tailwindcss/postcss`. The content script imports `./styles/tailwind.css?raw` and injects the string into its shadow root. **Tailwind preflight does not cross shadow-root boundaries**, so set explicit utilities like `font-sans` on the toolbar container rather than relying on the cascade.
+
+## Build Layout
+
+- `public/common/` — shared assets (icons, `options.html`) copied into every build.
+- `public/chrome/{dev,prod}/manifest.json` — Chrome manifests (`background.service_worker`, `options_page`).
+- `public/firefox/{dev,prod}/manifest.json` — Firefox manifests (`background.scripts`, `options_ui`, `browser_specific_settings.gecko.id`).
+- Webpack reads `BROWSER=chrome|firefox` (default `chrome`) and outputs to `dist/<browser>/`. The `build-{dev,prod}:{chrome,firefox}` yarn scripts wrap this. `build-dev` / `build-prod` build both.
 
 ## Toggle + State Fan-out
 

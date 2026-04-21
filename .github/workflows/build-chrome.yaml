@@ -1,4 +1,4 @@
-name: Build Chrome
+name: Build Extension
 
 on:
   workflow_dispatch:
@@ -14,6 +14,10 @@ concurrency:
 jobs:
   build-prod:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chrome, firefox]
     steps:
       - uses: actions/checkout@v5
         with:
@@ -25,11 +29,11 @@ jobs:
           cache: yarn
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      - name: Build prod package
-        run: yarn build-prod
+      - name: Build prod package (${{ matrix.browser }})
+        run: yarn build-prod:${{ matrix.browser }}
       - name: Get prod package suffix
         run: |
-          version=$(grep '"version"' dist/manifest.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
+          version=$(grep '"version"' dist/${{ matrix.browser }}/manifest.json | awk -F: '{ print $2 }' | sed 's/[", ]//g')
           short_sha=${GITHUB_SHA:0:7}
           suffix="${version}-prod-${short_sha}"
           echo "Set package_suffix to ${suffix}"
@@ -37,8 +41,8 @@ jobs:
       - name: Upload prod package
         uses: actions/upload-artifact@v4
         with:
-          name: image-helper@${{ env.package_suffix }}
-          path: ./dist/
+          name: image-helper-${{ matrix.browser }}@${{ env.package_suffix }}
+          path: ./dist/${{ matrix.browser }}/
           overwrite: true
           retention-days: 30
           if-no-files-found: error

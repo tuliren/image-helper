@@ -1,4 +1,12 @@
-name: Bump Chrome Version
+name: Bump Extension Version
+
+# The PR-creation step requires the repo to either:
+#   (a) enable "Allow GitHub Actions to create and approve pull requests"
+#       under Settings → Actions → General → Workflow permissions, or
+#   (b) expose a Personal Access Token with `pull-requests: write` as the
+#       `BUMP_VERSION_TOKEN` repository secret.
+# Without one of those, GitHub rejects `gh pr create` with:
+#   "GitHub Actions is not permitted to create or approve pull requests".
 
 on:
   workflow_dispatch:
@@ -80,12 +88,17 @@ jobs:
           new_version_dev="${{ steps.new_version.outputs.new_version_dev }}"
 
           sed -i "s/^VERSION=.*/VERSION=${new_version_dev}/" .env.development
-          sed -i "s/\"version_name\": \".*\"/\"version_name\": \"${new_version_dev}\"/" public/dev/manifest.json
-
           sed -i "s/^VERSION=.*/VERSION=${new_version}/" .env.production
           sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" package.json
-          sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" public/dev/manifest.json
-          sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" public/prod/manifest.json
+
+          for manifest in public/chrome/dev/manifest.json public/firefox/dev/manifest.json; do
+            sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" "${manifest}"
+            sed -i "s/\"version_name\": \".*\"/\"version_name\": \"${new_version_dev}\"/" "${manifest}"
+          done
+
+          for manifest in public/chrome/prod/manifest.json public/firefox/prod/manifest.json; do
+            sed -i "s/\"version\": \".*\"/\"version\": \"${new_version}\"/" "${manifest}"
+          done
 
           echo "Updated all version files to ${new_version}"
 
@@ -100,45 +113,56 @@ jobs:
           echo "=== package.json ==="
           grep "\"version\":" package.json
           echo ""
-          echo "=== public/dev/manifest.json ==="
-          grep -E "\"version(_name)?\":" public/dev/manifest.json
-          echo ""
-          echo "=== public/prod/manifest.json ==="
-          grep "\"version\":" public/prod/manifest.json
+          for manifest in public/chrome/dev/manifest.json public/firefox/dev/manifest.json public/chrome/prod/manifest.json public/firefox/prod/manifest.json; do
+            echo "=== ${manifest} ==="
+            grep -E "\"version(_name)?\":" "${manifest}"
+            echo ""
+          done
 
       - name: Create branch and commit changes
         id: create_branch
         run: |
           timestamp=$(date +%s)
-          branch_name="bump-chrome-version-${{ steps.new_version.outputs.new_version }}-${timestamp}"
+          branch_name="bump-extension-version-${{ steps.new_version.outputs.new_version }}-${timestamp}"
           echo "branch_name=${branch_name}" >> "$GITHUB_OUTPUT"
 
           git checkout -b "${branch_name}"
-          git add .env.development .env.production package.json public/dev/manifest.json public/prod/manifest.json
-          git commit -m "Bump Chrome extension version to ${{ steps.new_version.outputs.new_version }}"
+          git add \
+            .env.development .env.production package.json \
+            public/chrome/dev/manifest.json public/chrome/prod/manifest.json \
+            public/firefox/dev/manifest.json public/firefox/prod/manifest.json
+          git commit -m "Bump extension version to ${{ steps.new_version.outputs.new_version }}"
           git push origin "${branch_name}"
 
       - name: Create Pull Request
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.BUMP_VERSION_TOKEN || github.token }}
         run: |
+          set +e
           gh pr create \
             --base main \
             --head "${{ steps.create_branch.outputs.branch_name }}" \
-            --title "Bump Chrome extension version to ${{ steps.new_version.outputs.new_version }}" \
+            --title "Bump extension version to ${{ steps.new_version.outputs.new_version }}" \
             --body "## Version Bump
 
-          This PR bumps the Chrome extension version from **${{ steps.current_version.outputs.current_version }}** to **${{ steps.new_version.outputs.new_version }}**.
+          This PR bumps the extension version from **${{ steps.current_version.outputs.current_version }}** to **${{ steps.new_version.outputs.new_version }}**.
 
           **Bump Type:** ${{ inputs.version_bump }}
 
           ### Files Updated
 
-          - \`.env.development\` - VERSION=${{ steps.new_version.outputs.new_version_dev }}
-          - \`.env.production\` - VERSION=${{ steps.new_version.outputs.new_version }}
-          - \`package.json\` - version: ${{ steps.new_version.outputs.new_version }}
-          - \`public/dev/manifest.json\` - version: ${{ steps.new_version.outputs.new_version }}, version_name: ${{ steps.new_version.outputs.new_version_dev }}
-          - \`public/prod/manifest.json\` - version: ${{ steps.new_version.outputs.new_version }}
+          - \`.env.development\` — VERSION=${{ steps.new_version.outputs.new_version_dev }}
+          - \`.env.production\` — VERSION=${{ steps.new_version.outputs.new_version }}
+          - \`package.json\` — version: ${{ steps.new_version.outputs.new_version }}
+          - \`public/chrome/dev/manifest.json\` — version: ${{ steps.new_version.outputs.new_version }}, version_name: ${{ steps.new_version.outputs.new_version_dev }}
+          - \`public/chrome/prod/manifest.json\` — version: ${{ steps.new_version.outputs.new_version }}
+          - \`public/firefox/dev/manifest.json\` — version: ${{ steps.new_version.outputs.new_version }}, version_name: ${{ steps.new_version.outputs.new_version_dev }}
+          - \`public/firefox/prod/manifest.json\` — version: ${{ steps.new_version.outputs.new_version }}
 
           ---
-          *This PR was automatically generated by the Bump Chrome Version workflow.*"
+          *This PR was automatically generated by the Bump Extension Version workflow.*"
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "::error::gh pr create failed. Either enable 'Allow GitHub Actions to create and approve pull requests' under Settings → Actions → General → Workflow permissions, or add a PAT with 'pull-requests: write' as the BUMP_VERSION_TOKEN repo secret. The branch '${{ steps.create_branch.outputs.branch_name }}' has been pushed, so you can open the PR manually from the GitHub UI."
+            exit $status
+          fi

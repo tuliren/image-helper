@@ -1,7 +1,7 @@
 # Image Helper
 
-A Chrome (Manifest V3) extension that adds a floating toolbar to every large image on the page
-with two actions:
+A Manifest V3 browser extension (Chrome and Firefox) that adds a floating toolbar to every large
+image on the page with two actions:
 
 - **Open image in new tab**
 - **Save image** (to a configurable subfolder under your default Downloads directory; duplicate
@@ -35,18 +35,35 @@ yarn dev            # webpack --watch
 ## Build
 
 ```sh
-yarn build-dev      # → dist (uses .env.development + public/dev/manifest.json)
-yarn build-prod     # → dist (uses .env.production + public/prod/manifest.json)
+yarn build-dev              # both browsers → dist/chrome and dist/firefox (dev manifests)
+yarn build-dev:chrome       # Chrome only   → dist/chrome
+yarn build-dev:firefox      # Firefox only  → dist/firefox
+
+yarn build-prod             # both browsers → dist/chrome and dist/firefox (prod manifests)
+yarn build-prod:chrome      # Chrome only   → dist/chrome
+yarn build-prod:firefox     # Firefox only  → dist/firefox
 ```
+
+Each build uses `public/common` (shared assets + icons) plus `public/<browser>/<dev|prod>/manifest.json`.
 
 ## Load as an unpacked extension
 
+### Chrome
+
 1. Open `chrome://extensions`.
 2. Enable **Developer mode**.
-3. Click **Load unpacked** and choose `dist`.
+3. Click **Load unpacked** and choose `dist/chrome`.
 4. Pin the Image Helper icon. Click it once to activate on the current and future pages.
 5. Open the options page (right-click the icon → Options) to set threshold, subfolder, and
    middle-click behavior.
+
+### Firefox
+
+1. Open `about:debugging#/runtime/this-firefox`.
+2. Click **Load Temporary Add-on…** and select any file inside `dist/firefox` (e.g. `manifest.json`).
+3. The toolbar icon appears in the extensions menu — pin it and click to activate.
+4. Firefox MV3 runs the background as an event page, not a service worker. Everything else
+   (options page, content script, downloads) works the same as Chrome.
 
 ## Layout
 
