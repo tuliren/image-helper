@@ -1,6 +1,6 @@
 {
   "name": "image-helper",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Chrome extension that adds a floating toolbar for downloading large images",
   "license": "MIT",
   "private": true,
