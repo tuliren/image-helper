@@ -1,3 +1,4 @@
+import { qualifiesForToolbar } from './common/imageQualify';
 import { devLog } from './common/logging';
 import {
   DownloadImageRequest,
@@ -58,13 +59,6 @@ const resolveUrl = (image: HTMLImageElement): string | null => {
 };
 
 const thresholdBytes = (): number => state.options.thresholdKb * 1024;
-
-const isQualifyingSize = (bytes: number | null | undefined): boolean => {
-  if (bytes == null) {
-    return false;
-  }
-  return bytes >= thresholdBytes();
-};
 
 interface ToolbarHandle {
   host: HTMLDivElement;
@@ -294,7 +288,14 @@ const measureImage = async (image: HTMLImageElement): Promise<void> => {
       const response = await headImage(u);
       return { bytes: response?.ok ? (response.bytes ?? null) : null };
     }));
-  if (isQualifyingSize(result.bytes)) {
+  if (
+    qualifiesForToolbar({
+      bytes: result.bytes,
+      naturalWidth: image.naturalWidth,
+      naturalHeight: image.naturalHeight,
+      thresholdBytes: thresholdBytes(),
+    })
+  ) {
     qualifyingImages.add(image);
   }
 };

@@ -36,7 +36,5 @@ export const qualifiesForToolbar = ({
   if (bytes != null) {
     return bytes >= thresholdBytes;
   }
-  return (
-    naturalWidth >= MIN_FALLBACK_DIMENSION_PX && naturalHeight >= MIN_FALLBACK_DIMENSION_PX
-  );
+  return naturalWidth >= MIN_FALLBACK_DIMENSION_PX && naturalHeight >= MIN_FALLBACK_DIMENSION_PX;
 };
