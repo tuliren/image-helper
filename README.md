@@ -12,7 +12,9 @@ image on the page with two actions:
 - Activate / deactivate by clicking the extension's toolbar icon. The icon switches between
   outline (inactive) and filled (active) so the current state is obvious. Deactivated by default.
 - Toolbar appears on hover over images whose `Content-Length` meets the configurable **KB
-  threshold**.
+  threshold**. When a host doesn't expose a measurable size — it rejects the `HEAD` request
+  (e.g. `405`) or omits `Content-Length` — the extension fails open and falls back to the
+  image's rendered dimensions so the toolbar still works instead of silently disappearing.
 - Optional **middle-click shortcut** that runs Open or Save without showing the toolbar.
 - Once an image has been saved during the current page session, the Save button swaps to a
   "Saved" variant. Memory is cleared on page refresh.
