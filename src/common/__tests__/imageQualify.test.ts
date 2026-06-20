@@ -1,6 +1,17 @@
-import { MIN_FALLBACK_DIMENSION_PX, qualifiesForToolbar } from '../imageQualify';
+import { estimateBytesFromDimensions, qualifiesForToolbar } from '../imageQualify';
 
-const THRESHOLD_BYTES = 100 * 1024;
+const THRESHOLD_BYTES = 100 * 1024; // 102,400
+
+describe('estimateBytesFromDimensions', () => {
+  it.each([
+    { width: 1000, height: 1000, expected: 300000, name: '1000x1000 megapixel image' },
+    { width: 900, height: 1200, expected: 324000, name: 'real 900x1200 sample' },
+    { width: 100, height: 50, expected: 1500, name: 'small image' },
+    { width: 0, height: 0, expected: 0, name: 'unloaded image is zero' },
+  ])('$name', ({ width, height, expected }) => {
+    expect(estimateBytesFromDimensions(width, height)).toBe(expected);
+  });
+});
 
 describe('qualifiesForToolbar', () => {
   describe('known byte size gates strictly on the threshold', () => {
@@ -10,7 +21,7 @@ describe('qualifiesForToolbar', () => {
       { bytes: THRESHOLD_BYTES - 1, expected: false, name: 'below threshold is excluded' },
       { bytes: 0, expected: false, name: 'zero bytes is excluded' },
     ])('$name', ({ bytes, expected }) => {
-      // Dimensions are intentionally large to prove they are ignored when bytes are known.
+      // Dimensions are large to prove they are ignored when the real size is known.
       expect(
         qualifiesForToolbar({
           bytes,
@@ -22,50 +33,24 @@ describe('qualifiesForToolbar', () => {
     });
   });
 
-  describe('unknown byte size fails open using rendered dimensions', () => {
+  describe('unknown byte size estimates from dimensions against the same threshold', () => {
     it.each([
       {
-        naturalWidth: MIN_FALLBACK_DIMENSION_PX + 1,
-        naturalHeight: MIN_FALLBACK_DIMENSION_PX + 1,
+        width: 900,
+        height: 1200,
         expected: true,
-        name: 'large on both sides qualifies',
+        name: 'real 900x1200 sample (~324 KB) qualifies',
       },
-      {
-        naturalWidth: MIN_FALLBACK_DIMENSION_PX,
-        naturalHeight: MIN_FALLBACK_DIMENSION_PX,
-        expected: true,
-        name: 'exactly at the minimum on both sides qualifies',
-      },
-      {
-        naturalWidth: MIN_FALLBACK_DIMENSION_PX - 1,
-        naturalHeight: MIN_FALLBACK_DIMENSION_PX,
-        expected: false,
-        name: 'too narrow is excluded',
-      },
-      {
-        naturalWidth: MIN_FALLBACK_DIMENSION_PX,
-        naturalHeight: MIN_FALLBACK_DIMENSION_PX - 1,
-        expected: false,
-        name: 'too short is excluded',
-      },
-      {
-        naturalWidth: 16,
-        naturalHeight: 16,
-        expected: false,
-        name: 'tiny icon is excluded',
-      },
-      {
-        naturalWidth: 0,
-        naturalHeight: 0,
-        expected: false,
-        name: 'not-yet-loaded image is excluded',
-      },
-    ])('$name', ({ naturalWidth, naturalHeight, expected }) => {
+      { width: 600, height: 600, expected: true, name: '600x600 (~108 KB) just clears threshold' },
+      { width: 500, height: 500, expected: false, name: '500x500 (~75 KB) is below threshold' },
+      { width: 16, height: 16, expected: false, name: 'tiny icon is excluded' },
+      { width: 0, height: 0, expected: false, name: 'not-yet-loaded image is excluded' },
+    ])('$name', ({ width, height, expected }) => {
       expect(
         qualifiesForToolbar({
           bytes: null,
-          naturalWidth,
-          naturalHeight,
+          naturalWidth: width,
+          naturalHeight: height,
           thresholdBytes: THRESHOLD_BYTES,
         })
       ).toBe(expected);
